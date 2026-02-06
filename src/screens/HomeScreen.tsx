@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Pressable, StyleSheet, Text, View, Platform, Alert } from 'react-native'
 import React, { useState } from 'react'
 import AllItems from './AllItems'
-import CreateScreen from './CreateScreen'
+import CreateScreen from './CreateScreen';
+import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 
 const data=[
     {id:1,name:"Wheat",stock:5,unit:"kg"},
@@ -10,6 +11,39 @@ const data=[
     {id:4,name:"Pulse",stock:50,unit:"kg"},
     {id:5,name:"Corn",stock:19,unit:"kg"},
 ]
+
+import { launchCamera } from 'react-native-image-picker';
+
+export const requestCameraPermission = async () => {
+    if (Platform.OS !== 'android') return true;
+  
+    const result = await request(PERMISSIONS.ANDROID.CAMERA);
+  
+    return result === RESULTS.GRANTED;
+  };
+
+const takePhoto = async () => {
+    const hasPermission = await requestCameraPermission();
+    console.log(hasPermission);
+    if (!hasPermission) {
+        Alert.alert('Permission denied', 'Please grant camera permission to use this feature.');
+        return;
+      }
+    console.log("Taking photo...");
+  const result = await launchCamera({
+    mediaType: 'photo',
+    cameraType: 'back',
+    saveToPhotos: true,
+    quality: 0.8,
+  });
+
+  if (result.didCancel) return;
+
+  if (result.assets?.length) {
+    const photo = result.assets[0];
+    console.log(photo.uri, photo.fileName, photo.type);
+  }
+};
 
 const HomeScreen = () => {
     const [view, setView] = useState(0)
@@ -25,6 +59,9 @@ const HomeScreen = () => {
         </Pressable>
         <Pressable style={[styles.button,view==2 ? {backgroundColor:"green"} : null]} onPress={()=>setView(2)}>
             <Text style={[styles.btnText,view==2 ? {color:'white'} : null]}>Create</Text>
+        </Pressable>
+        <Pressable style={[styles.button,view==3 ? {backgroundColor:"green"} : null]} onPress={()=>takePhoto()}>
+            <Text style={[styles.btnText,view==3 ? {color:'white'} : null]}>Take Photo</Text>
         </Pressable>
       </View>
       { view==0 && <AllItems data={data}/> }
